@@ -7,13 +7,16 @@ A lightweight, client-side tool for inspecting **schema-less Protocol Buffers (P
 ## What it does
 
 - Accepts raw Protobuf HEX input
-- Parses Protobuf field keys and wire types currently implemented by the decoder
-- Reads varints
+- Validates HEX before decoding
+- Parses Protobuf field keys and wire types
+- Reads 64-bit-safe varints using JavaScript `BigInt`
 - Handles length-delimited fields
-- Attempts UTF-8 text detection
-- Recursively inspects length-delimited data as nested messages
+- Detects printable UTF-8 text
+- Recursively inspects nested length-delimited messages
+- Decodes fixed64 and fixed32 fields as raw hexadecimal bytes
 - Groups repeated fields and simplifies single-value fields
 - Displays decoded data as formatted JSON
+- Copies decoded output to the clipboard
 - Runs entirely in the browser
 
 ## How it works
@@ -32,18 +35,22 @@ value decoding
 JSON output
 ```
 
-The current implementation is intentionally schema-less, so field numbers are shown as numeric keys rather than meaningful `.proto` field names.
+The implementation is intentionally schema-less, so field numbers are shown as numeric keys rather than meaningful `.proto` field names.
 
 ## Current decoder scope
 
-The current implementation explicitly handles:
+The current implementation handles:
 
-- Wire type `0` — varint
-- Wire type `2` — length-delimited values
-- Printable UTF-8 detection for text values
-- Recursive inspection of nested length-delimited payloads
+| Wire type | Meaning | Support |
+|---:|---|---|
+| `0` | Varint | ✅ |
+| `1` | 64-bit | ✅ Raw HEX |
+| `2` | Length-delimited | ✅ |
+| `3` | Start group | ❌ Explicitly unsupported |
+| `4` | End group | ❌ Explicitly unsupported |
+| `5` | 32-bit | ✅ Raw HEX |
 
-Other Protobuf wire types are not currently decoded by the implementation and may cause a payload to be reported as unsupported.
+For wire type `2`, the decoder first attempts strict UTF-8 detection. If the value is not printable text, it attempts recursive message decoding and falls back to raw HEX when the payload cannot be interpreted as a nested message.
 
 ## Usage
 
@@ -54,13 +61,13 @@ Other Protobuf wire types are not currently decoded by the implementation and ma
 
 ## Privacy
 
-The application is client-side only. Payloads are processed in the browser; the project does not require a backend, file upload, or application database.
-
-Do not treat this as a guarantee that a hosted browser environment is private if you use it with sensitive data. For sensitive payloads, review the deployed source and run the application locally.
+The decoder itself processes payloads in the browser and does not require a project backend, file upload, or application database. The hosted page can still load through normal browser/network infrastructure, so sensitive payloads should be inspected locally if privacy is important.
 
 ## Limitations
 
-Schema-less decoding cannot recover the original field names, schema semantics, or application-specific meaning. Binary length-delimited values can also be ambiguous between text, nested messages, and arbitrary bytes.
+Schema-less decoding cannot recover the original field names, schema semantics, or application-specific meaning. Length-delimited binary values can also be ambiguous between text, nested messages, and arbitrary bytes.
+
+The tool does not currently interpret fields using a `.proto` schema, and fixed32/fixed64 values are exposed as raw hexadecimal rather than being converted into application-specific numeric types.
 
 This is an inspection/debugging utility, not a full replacement for a generated Protobuf parser with the original schema.
 
@@ -78,7 +85,9 @@ This is an inspection/debugging utility, not a full replacement for a generated 
 - HTML
 - CSS
 - Vanilla JavaScript
-- Browser `TextDecoder` / Clipboard APIs
+- JavaScript `BigInt`
+- Browser `TextDecoder`
+- Clipboard API
 
 No framework or build system is required.
 
