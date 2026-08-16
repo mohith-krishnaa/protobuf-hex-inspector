@@ -2,262 +2,124 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Protobuf Hex Decoder</title>
+<title>Protobuf Hex Inspector</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-:root{
-  --bg:#0d1117;
-  --panel:#161b22;
-  --border:#30363d;
-  --text:#e6edf3;
-  --muted:#8b949e;
-  --accent:#2f81f7;
-  --ok:#3fb950;
-  --bad:#f85149;
-}
-*{
-  box-sizing:border-box;
-  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont;
-}
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-}
-.app{
-  max-width:960px;
-  margin:auto;
-  padding:24px 16px;
-}
-header{
-  margin-bottom:20px;
-}
-header h1{
-  margin:0;
-  font-size:22px;
-  font-weight:600;
-}
-header p{
-  margin:6px 0 0;
-  color:var(--muted);
-  font-size:14px;
-}
-
-.panel{
-  background:var(--panel);
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:16px;
-  margin-bottom:16px;
-}
-
-.label{
-  font-size:13px;
-  color:var(--muted);
-  margin-bottom:6px;
-}
-
-textarea{
-  width:100%;
-  min-height:140px;
-  background:#0d1117;
-  border:1px solid var(--border);
-  border-radius:10px;
-  padding:12px;
-  color:var(--text);
-  font-size:13px;
-  resize:vertical;
-}
-
-.actions{
-  display:flex;
-  gap:10px;
-  margin-top:12px;
-}
-
-button{
-  border-radius:10px;
-  border:1px solid var(--border);
-  background:#21262d;
-  color:var(--text);
-  padding:10px 14px;
-  font-size:14px;
-  cursor:pointer;
-}
-button.primary{
-  background:var(--accent);
-  border:none;
-  color:white;
-}
-button:hover{opacity:.9}
-
-.status{
-  margin-top:8px;
-  font-size:13px;
-}
-.status.ok{color:var(--ok)}
-.status.bad{color:var(--bad)}
-
-.output-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:6px;
-}
-.output-header span{
-  font-size:13px;
-  color:var(--muted);
-}
-
-pre{
-  background:#0d1117;
-  border:1px solid var(--border);
-  border-radius:10px;
-  padding:12px;
-  font-size:13px;
-  max-height:420px;
-  overflow:auto;
-  white-space:pre-wrap;
-}
-
-.footer{
-  text-align:center;
-  font-size:12px;
-  color:var(--muted);
-  margin-top:24px;
-}
+:root{--bg:#0d1117;--panel:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#2f81f7;--ok:#3fb950;--bad:#f85149}
+*{box-sizing:border-box;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text)}
+.app{max-width:960px;margin:auto;padding:24px 16px} header{margin-bottom:20px} header h1{margin:0;font-size:22px;font-weight:600} header p{margin:6px 0 0;color:var(--muted);font-size:14px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}.label{font-size:13px;color:var(--muted);margin-bottom:6px}
+textarea{width:100%;min-height:140px;background:#0d1117;border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--text);font-size:13px;resize:vertical}
+.actions{display:flex;gap:10px;margin-top:12px}button{border-radius:10px;border:1px solid var(--border);background:#21262d;color:var(--text);padding:10px 14px;font-size:14px;cursor:pointer}button.primary{background:var(--accent);border:none;color:white}button:hover{opacity:.9}
+.status{margin-top:8px;font-size:13px}.status.ok{color:var(--ok)}.status.bad{color:var(--bad)}
+.output-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}.output-header span{font-size:13px;color:var(--muted)}
+pre{background:#0d1117;border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;max-height:420px;overflow:auto;white-space:pre-wrap}.footer{text-align:center;font-size:12px;color:var(--muted);margin-top:24px}
 </style>
 </head>
-
 <body>
 <div class="app">
-
-<header>
-  <h1>Protobuf Hex Decoder</h1>
-  <p>Decode schema-less Protobuf payloads into structured JSON</p>
-</header>
-
+<header><h1>Protobuf Hex Inspector</h1><p>Inspect schema-less Protobuf payloads and decode supported wire types into JSON</p></header>
 <div class="panel">
-  <div class="label">Input (HEX)</div>
-  <textarea id="hex" placeholder="Paste Protobuf HEX payload here…"></textarea>
-
-  <div class="actions">
-    <button class="primary" onclick="decode()">Decode</button>
-    <button onclick="clearAll()">Clear</button>
-  </div>
-
-  <div id="status" class="status"></div>
+<div class="label">Input (HEX)</div>
+<textarea id="hex" placeholder="Paste Protobuf HEX payload here…"></textarea>
+<div class="actions"><button class="primary" onclick="decode()">Decode</button><button onclick="clearAll()">Clear</button></div>
+<div id="status" class="status"></div>
 </div>
-
 <div class="panel">
-  <div class="output-header">
-    <span>Decoded Output (JSON)</span>
-    <button onclick="copyOut()">Copy</button>
-  </div>
-
-  <pre id="out">Awaiting input…</pre>
+<div class="output-header"><span>Decoded Output (JSON)</span><button onclick="copyOut()">Copy</button></div>
+<pre id="out">Awaiting input…</pre>
 </div>
-
-<div class="footer">
-  Client-side only • No uploads • No tracking
+<div class="footer">Client-side only • No uploads • No tracking</div>
 </div>
-
-</div>
-
 <script>
+const hexInput=document.getElementById('hex');
+const output=document.getElementById('out');
+const statusEl=document.getElementById('status');
+
 function hexToBytes(hex){
-  hex = hex.replace(/\s+/g,'');
-  const out = [];
-  for(let i=0;i<hex.length;i+=2)
-    out.push(parseInt(hex.substr(i,2),16));
-  return out;
+  const normalized=hex.replace(/\s+/g,'');
+  if(!normalized) throw new Error('Input is empty');
+  if(normalized.length%2!==0) throw new Error('HEX input must contain complete bytes');
+  if(!/^[0-9a-fA-F]+$/.test(normalized)) throw new Error('HEX input contains invalid characters');
+  const bytes=new Uint8Array(normalized.length/2);
+  for(let i=0;i<normalized.length;i+=2) bytes[i/2]=Number.parseInt(normalized.slice(i,i+2),16);
+  return bytes;
 }
 
 function readVarint(buf,pos){
-  let res = 0, shift = 0;
-  while(true){
-    const b = buf[pos.i++];
-    res |= (b & 0x7f) << shift;
-    if(!(b & 0x80)) break;
-    shift += 7;
+  let result=0n;
+  for(let shift=0n;shift<64n;shift+=7n){
+    if(pos.i>=buf.length) throw new Error('Truncated varint');
+    const byte=buf[pos.i++];
+    result|=BigInt(byte&0x7f)<<shift;
+    if((byte&0x80)===0){
+      return result<=BigInt(Number.MAX_SAFE_INTEGER)?Number(result):result.toString();
+    }
   }
-  return res;
+  throw new Error('Invalid varint');
 }
 
-function isPrintable(str){
-  return /^[\x09\x0A\x0D\x20-\x7E]+$/.test(str);
+function readVarintBigInt(buf,pos){
+  let result=0n;
+  for(let shift=0n;shift<64n;shift+=7n){
+    if(pos.i>=buf.length) throw new Error('Truncated varint');
+    const byte=buf[pos.i++];
+    result|=BigInt(byte&0x7f)<<shift;
+    if((byte&0x80)===0) return result;
+  }
+  throw new Error('Invalid varint');
 }
 
-function decodeMsg(buf){
-  const pos = { i: 0 };
-  const obj = {};
+function readLength(buf,pos){
+  const length=readVarintBigInt(buf,pos);
+  if(length>BigInt(buf.length-pos.i)) throw new Error('Length-delimited field exceeds payload');
+  return Number(length);
+}
 
-  while(pos.i < buf.length){
-    const key = readVarint(buf,pos);
-    const field = (key >> 3).toString();
-    const wire = key & 7;
-    let value;
+function isPrintable(str){return /^[\x09\x0A\x0D\x20-\x7E]+$/.test(str)}
 
-    if(wire === 0){
-      value = readVarint(buf,pos);
-    }
-    else if(wire === 2){
-      const len = readVarint(buf,pos);
-      const slice = buf.slice(pos.i, pos.i + len);
-      pos.i += len;
-
-      let str;
-      try{ str = new TextDecoder().decode(new Uint8Array(slice)); }catch{}
-
-      if(str && isPrintable(str)){
-        value = str;
-      } else {
-        const nested = decodeMsg(slice);
-        value = Object.keys(nested).length ? nested : (str ?? slice);
-      }
-    }
-    else break;
-
-    if(!obj[field]) obj[field] = [];
-    obj[field].push(value);
+function decodeMsg(buf,depth=0){
+  if(depth>32) throw new Error('Nested message depth exceeded');
+  const pos={i:0}; const obj={};
+  while(pos.i<buf.length){
+    const key=readVarintBigInt(buf,pos);
+    const fieldNumber=key>>3n; const wire=Number(key&7n);
+    if(fieldNumber<1n||fieldNumber>536870911n||fieldNumber===19000n||fieldNumber===19001n) throw new Error('Invalid Protobuf field number');
+    const field=fieldNumber.toString(); let value;
+    if(wire===0){
+      const raw=readVarint(buf,pos); value=raw;
+    }else if(wire===2){
+      const len=readLength(buf,pos); const slice=buf.slice(pos.i,pos.i+len); pos.i+=len;
+      let text=''; let validUtf8=true;
+      try{text=new TextDecoder('utf-8',{fatal:true}).decode(slice)}catch{validUtf8=false}
+      if(validUtf8&&text&&isPrintable(text)) value=text;
+      else{const nested=decodeMsg(slice,depth+1); value=Object.keys(nested).length?nested:Array.from(slice,b=>b.toString(16).padStart(2,'0')).join('')}
+    }else if(wire===1){
+      if(pos.i+8>buf.length) throw new Error('Truncated fixed64 field');
+      value=Array.from(buf.slice(pos.i,pos.i+8),b=>b.toString(16).padStart(2,'0')).join(''); pos.i+=8;
+    }else if(wire===5){
+      if(pos.i+4>buf.length) throw new Error('Truncated fixed32 field');
+      value=Array.from(buf.slice(pos.i,pos.i+4),b=>b.toString(16).padStart(2,'0')).join(''); pos.i+=4;
+    }else if(wire===3||wire===4){throw new Error('Groups are unsupported')}else{throw new Error(`Unsupported wire type: ${wire}`)}
+    if(!obj[field]) obj[field]=[]; obj[field].push(value);
   }
-
-  for(const k in obj)
-    if(obj[k].length === 1) obj[k] = obj[k][0];
-
+  for(const key of Object.keys(obj)) if(obj[key].length===1) obj[key]=obj[key][0];
   return obj;
 }
 
 function decode(){
-  const input = hex.value.trim();
-  try{
-    if(!input) throw 0;
-    const bytes = hexToBytes(input);
-    const decoded = decodeMsg(bytes);
-    out.textContent = JSON.stringify(decoded, null, 2);
-    setStatus("Decoded successfully","ok");
-  }catch{
-    out.textContent = "Invalid or unsupported Protobuf payload";
-    setStatus("Decode failed","bad");
-  }
+  try{const bytes=hexToBytes(hexInput.value.trim());const decoded=decodeMsg(bytes);output.textContent=JSON.stringify(decoded,null,2);setStatus('Decoded successfully','ok')}
+  catch(error){output.textContent='Invalid or unsupported Protobuf payload';setStatus(error.message||'Decode failed','bad')}
 }
 
-function copyOut(){
-  navigator.clipboard.writeText(out.textContent);
-  setStatus("Copied to clipboard","ok");
+async function copyOut(){
+  try{await navigator.clipboard.writeText(output.textContent);setStatus('Copied to clipboard','ok')}
+  catch{setStatus('Clipboard access failed','bad')}
 }
-
-function clearAll(){
-  hex.value="";
-  out.textContent="Awaiting input…";
-  status.textContent="";
-}
-
-function setStatus(msg,type){
-  status.className = "status " + type;
-  status.textContent = msg;
-}
+function clearAll(){hexInput.value='';output.textContent='Awaiting input…';statusEl.textContent='';statusEl.className='status'}
+function setStatus(msg,type){statusEl.className='status '+type;statusEl.textContent=msg}
 </script>
 </body>
 </html>
