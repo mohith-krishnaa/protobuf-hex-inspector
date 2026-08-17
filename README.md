@@ -1,80 +1,108 @@
 # Protobuf Hex Inspector
 
-A lightweight, client-side tool for inspecting **schema-less Protocol Buffers (Protobuf) HEX payloads** when the original `.proto` schema is unavailable.
+A lightweight, client-side developer utility for inspecting **schema-less Protocol Buffers (Protobuf) HEX payloads** when the original `.proto` schema is unavailable.
 
-**Live demo:** https://mohith-krishnaa.github.io/protobuf-hex-inspector/
+**[Live Demo](https://mohith-krishnaa.github.io/protobuf-hex-inspector/)** · **[Source](https://github.com/mohith-krishnaa/protobuf-hex-inspector)**
+
+## Interface
+
+![Protobuf Hex Inspector overview](./assets/protobuf-overview.jpg)
+
+Protobuf Hex Inspector is designed for quickly understanding the **wire-level structure** of a payload without pretending to know application-specific schema semantics.
 
 ## What it does
 
 - Accepts raw Protobuf HEX input
-- Validates HEX before decoding
-- Parses Protobuf field keys and wire types
-- Reads 64-bit-safe varints using JavaScript `BigInt`
+- Validates and normalizes HEX
+- Parses field keys and wire types
+- Reads 64-bit-safe varints with JavaScript `BigInt`
+- Shows unsigned, signed 64-bit and ZigZag interpretations for varints
 - Handles length-delimited fields
 - Detects printable UTF-8 text
-- Recursively inspects nested length-delimited messages
-- Decodes fixed64 and fixed32 fields as raw hexadecimal bytes
-- Groups repeated fields and simplifies single-value fields
-- Displays decoded data as formatted JSON
-- Copies decoded output to the clipboard
+- Attempts recursive nested-message inspection
+- Exposes fixed32/fixed64 raw bytes and numeric interpretations
+- Shows field-level metadata and raw field bytes
+- Groups repeated fields in the JSON view
+- Measures payload size, field count and decode time
+- Copies decoded JSON to the clipboard
+- Saves decoded JSON locally
 - Runs entirely in the browser
+
+## Decoded output
+
+![Decoded Protobuf output](./assets/protobuf-decoded-output.jpg)
+
+The field inspector separates the human-readable JSON view from the underlying wire-level information, making it easier to debug malformed or unfamiliar payloads.
 
 ## How it works
 
 ```text
 HEX input
    ↓
-HEX → bytes
+HEX validation / normalization
    ↓
-Protobuf field key
+bytes
+   ↓
+field key
    ↓
 field number + wire type
    ↓
-value decoding
+wire-specific decoding
    ↓
-JSON output
+field metadata + interpreted value
+   ↓
+JSON / inspector table
 ```
 
-The implementation is intentionally schema-less, so field numbers are shown as numeric keys rather than meaningful `.proto` field names.
-
-## Current decoder scope
-
-The current implementation handles:
+## Supported wire types
 
 | Wire type | Meaning | Support |
 |---:|---|---|
-| `0` | Varint | ✅ |
-| `1` | 64-bit | ✅ Raw HEX |
-| `2` | Length-delimited | ✅ |
-| `3` | Start group | ❌ Explicitly unsupported |
-| `4` | End group | ❌ Explicitly unsupported |
-| `5` | 32-bit | ✅ Raw HEX |
+| `0` | Varint | ✅ unsigned / signed / ZigZag views |
+| `1` | 64-bit | ✅ raw HEX / uint64 / float64 |
+| `2` | Length-delimited | ✅ text / bytes / nested-message attempt |
+| `3` | Start group | ❌ unsupported |
+| `4` | End group | ❌ unsupported |
+| `5` | 32-bit | ✅ raw HEX / uint32 / int32 / float32 |
 
-For wire type `2`, the decoder first attempts strict UTF-8 detection. If the value is not printable text, it attempts recursive message decoding and falls back to raw HEX when the payload cannot be interpreted as a nested message.
+### Important schema limitation
+
+Without the original `.proto` schema, the inspector **cannot know the intended semantic type** of a field. For example, a wire-type `0` value could represent a `uint64`, `int64`, `sint64`, boolean, enum, or another application-defined value.
+
+The numeric interpretations shown by the tool are therefore **wire-level possibilities, not guaranteed semantic types**.
 
 ## Usage
 
-1. Open the live demo or `index.html` locally.
-2. Paste a Protobuf HEX payload into the input box.
-3. Select **Decode**.
-4. Copy the resulting JSON if needed.
+1. Open the [live demo](https://mohith-krishnaa.github.io/protobuf-hex-inspector/).
+2. Paste a Protobuf HEX payload.
+3. Select **Decode** or press `Ctrl/Cmd + Enter`.
+4. Inspect the JSON output.
+5. Use the field inspector to examine wire type, raw bytes and interpretations.
+6. Copy or save the decoded JSON when needed.
 
 ## Privacy
 
-The decoder itself processes payloads in the browser and does not require a project backend, file upload, or application database. The hosted page can still load through normal browser/network infrastructure, so sensitive payloads should be inspected locally if privacy is important.
+The decoder processes payloads in the browser and does not require a project backend, database or upload endpoint.
+
+For highly sensitive payloads, run the repository locally rather than relying on a hosted page.
 
 ## Limitations
 
-Schema-less decoding cannot recover the original field names, schema semantics, or application-specific meaning. Length-delimited binary values can also be ambiguous between text, nested messages, and arbitrary bytes.
+- No `.proto` schema awareness
+- Field names cannot be recovered without schema information
+- Length-delimited data is inherently ambiguous between text, nested messages and arbitrary bytes
+- Groups (wire types `3` and `4`) are intentionally unsupported
+- Numeric interpretations cannot establish the original application-level type
 
-The tool does not currently interpret fields using a `.proto` schema, and fixed32/fixed64 values are exposed as raw hexadecimal rather than being converted into application-specific numeric types.
-
-This is an inspection/debugging utility, not a full replacement for a generated Protobuf parser with the original schema.
+This is a **wire-level inspection/debugging utility**, not a replacement for a schema-aware generated Protobuf parser.
 
 ## Project structure
 
 ```text
 .
+├── assets/
+│   ├── protobuf-overview.jpg
+│   └── protobuf-decoded-output.jpg
 ├── index.html
 ├── README.md
 └── LICENSE
@@ -86,8 +114,10 @@ This is an inspection/debugging utility, not a full replacement for a generated 
 - CSS
 - Vanilla JavaScript
 - JavaScript `BigInt`
-- Browser `TextDecoder`
+- `TextDecoder`
+- `DataView`
 - Clipboard API
+- Browser File / Blob APIs
 
 No framework or build system is required.
 
